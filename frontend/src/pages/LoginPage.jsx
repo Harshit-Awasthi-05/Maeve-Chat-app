@@ -6,6 +6,7 @@ import maeveLogo from '../assets/maeve-logo.png'
 const LoginPage = () => {
   const [currState, setCurrState] = useState("Login")
   const [formData, setFormData] = useState({
+    fullName: "",
     username: '',
     email: '',
     password: ''
@@ -14,7 +15,13 @@ const LoginPage = () => {
   const navigate = useNavigate()
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    let { name, value } = e.target;
+
+    if (name === "username") {
+      value = value.toLowerCase().replace(/\s+/g, '');
+    }
+
+    setFormData({ ...formData, [name]: value })
     setErrorMsg("") 
   }
 
@@ -26,7 +33,7 @@ const LoginPage = () => {
       : '/auth/login';
 
     const payload = currState === "Sign up" 
-      ? { username: formData.username, email: formData.email, password: formData.password }
+      ? { fullName: formData.fullName, username: formData.username, email: formData.email, password: formData.password }
       : { email: formData.email, password: formData.password };
 
     try {
@@ -51,7 +58,7 @@ const LoginPage = () => {
   const toggleState = (newState) => {
     setCurrState(newState);
     setErrorMsg("");
-    setFormData({ username: '', email: '', password: '' });
+    setFormData({ fullName: '', username: '', email: '', password: '' });
   }
 
   return (
@@ -85,10 +92,22 @@ const LoginPage = () => {
           {currState === "Sign up" && (
             <input
               type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleInputChange}
+              placeholder="Full Name (e.g. Harshit Awasthi)"
+              className='w-full px-4 py-3 bg-black/20 border border-gray-600/50 rounded-xl outline-none focus:bg-black/40 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 placeholder-gray-500 text-sm transition-all duration-300'
+              required
+            />
+          )}
+
+          {currState === "Sign up" && (
+            <input
+              type="text"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              placeholder="Full Name"
+              placeholder="Username (e.g. harshit_dev)"
               className='w-full px-4 py-3 bg-black/20 border border-gray-600/50 rounded-xl outline-none focus:bg-black/40 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 placeholder-gray-500 text-sm transition-all duration-300'
               required
             />

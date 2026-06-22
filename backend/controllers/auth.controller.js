@@ -7,7 +7,7 @@ import config from "../config/config.js";
 import sendEmail from "../utils/sendEmail.js";
 
 export async function registerUser(req, res) {
-    const { username, email, password } = req.body;
+    const {fullName, username, email, password } = req.body;
 
     const isAlreadyExist = await userModel.findOne({
         $or: [
@@ -17,7 +17,12 @@ export async function registerUser(req, res) {
     });
 
     if (isAlreadyExist) {
-        return res.status(409).json({ message: "User already exists" });
+       if (existingUser.username === username) {
+                return res.status(409).json({ message: "This username is already taken. Please choose another." });
+            }
+            if (existingUser.email === email) {
+                return res.status(409).json({ message: "An account with this email already exists." });
+            }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,6 +30,7 @@ export async function registerUser(req, res) {
     const profilePicUrl = `https://ui-avatars.com/api/?name=${username.replace(/\s+/g, '+')}&background=random&color=fff`;
 
     const user = await userModel.create({
+        fullName,
         username,
         email,
         password: hashedPassword,
