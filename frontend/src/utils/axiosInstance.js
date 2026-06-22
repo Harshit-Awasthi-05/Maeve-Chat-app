@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5173/api', 
+  baseURL: 'https://maeve-chat-app.onrender.com/api', 
   withCredentials: true,
 });
 
