@@ -1,33 +1,59 @@
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import User from "../models/user.model.js";
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    proxy: true 
+    proxy : true
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      let existingUser = await User.findOne({ email: profile.emails[0].value });
+        let user = await User.findOne({ googleId: profile.id });
 
-      if (existingUser) {
-        return done(null, existingUser);
-      }
+        if (user) {
+            return done(null, user);
+        }
 
-      const generatedUsername = profile.emails[0].value.split('@')[0] + Math.floor(Math.random() * 1000);
+        const googleEmail = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
 
-      const newUser = new User({
-        googleId: profile.id,
-        fullName: profile.displayName,
-        username: generatedUsername,
-        email: profile.emails[0].value,
-        profilePic: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : ""
-      });
+        if (!googleEmail) {
+            return done(new Error("No email found in Google profile. Make sure 'email' scope is enabled."), null);
+        }
 
-      await newUser.save();
-      return done(null, newUser);
+        let existingUserByEmail = await User.findOne({ email: googleEmail });
 
+        if (existingUserByEmail) {
+            existingUserByEmail.googleId = profile.id;
+            
+            if (!existingUserByEmail.profilePic && profile.photos && profile.photos.length > 0) {
+                existingUserByEmail.profilePic = profile.photos[0].value;
+            }
+            
+            await existingUserByEmail.save();
+            return done(null, existingUserByEmail);
+        }
+
+        
+        
+        const generatedUsername = googleEmail.split('@')[0] + Math.floor(Math.random() * 1000);
+
+        
+        const newUser = await User.create({
+            googleId: profile.id,
+            fullName: profile.displayName, 
+            username: generatedUsername,   
+            email: googleEmail, 
+            profilePic: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : "",
+        });
+
+        return done(null, newUser);
     } catch (error) {
-      console.error(error);
-      return done(error, null);
+        console.error("Error in Google Strategy: ", error);
+        return done(error, null);
     }
   }
 ));
+
+export default passport;
