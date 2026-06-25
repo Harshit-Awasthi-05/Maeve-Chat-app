@@ -12,6 +12,17 @@ const App = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userStr = urlParams.get('user');
+
+    if (token && userStr) {
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('user', decodeURIComponent(userStr));
+      
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const checkAuth = async () => {
       try {
         const response = await axiosInstance.get('/auth/get-me')

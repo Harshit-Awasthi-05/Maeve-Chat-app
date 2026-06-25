@@ -6,6 +6,7 @@ import sessionModel from "../models/session.model.js";
 import config from "../config/config.js";
 import sendEmail from "../utils/sendEmail.js";
 
+
 export async function registerUser(req, res) {
     const {fullName, username, email, password } = req.body;
 
@@ -308,9 +309,15 @@ export async function googleCallback(req, res) {
     try {
         const user = req.user; 
 
+        const accessToken = jwt.sign(
+            { id: user._id }, 
+            process.env.JWT_SECRET, // Make sure this matches your config variable
+            { expiresIn: "15m" } // Access tokens should be short-lived
+        );
+
         const refreshToken = jwt.sign(
             { id: user._id }, 
-            config.JWT_SECRET, 
+            process.env.JWT_SECRET, 
             { expiresIn: "7d" }
         );
 
@@ -325,15 +332,18 @@ export async function googleCallback(req, res) {
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            secure: true, // Must be true when sameSite is "none"
+            sameSite: "none", 
             maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
-        res.redirect(process.env.CLIENT_URL || "http://localhost:5173/");
+        const userString = encodeURIComponent(JSON.stringify(user));
+
+        res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/?token=${accessToken}&user=${userString}`);
         
     } catch (error) {
-        res.redirect((process.env.CLIENT_URL || "http://localhost:5173") + "/login?error=oauth_failed");
+        console.error("Google Callback Error:", error);
+        res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/login?error=oauth_failed`);
     }
 }
 
